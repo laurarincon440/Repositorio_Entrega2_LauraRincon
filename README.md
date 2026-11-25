@@ -1,8 +1,6 @@
 # Pipeline único y control de calidad de datos: clasificador de especies Iris
 
-Seminario de Grado II, Especialización en Ciencia de Datos, Universidad Santo Tomás, Seccional Tunja.
-Actividad 2.1 "Estandarización de Pipelines y Control de Calidad de Datos".
-
+Seminario de Grado II - Actividad 2.1 "Estandarización de Pipelines y Control de Calidad de Datos".
 Autora: Laura Tatiana Rincón López
 
 ## Contenido
@@ -22,29 +20,21 @@ Autora: Laura Tatiana Rincón López
 
 ## 1. Introducción
 
-En la Actividad 1.1 se construyó una línea base reproducible para clasificar la especie de una flor Iris
-(setosa, versicolor o virginica) a partir de cuatro medidas en centímetros, con un Random Forest y registro
-de experimentos en MLflow. Ese trabajo se ejecutaba celda por celda en un notebook, sin comprobar la
-calidad de los datos antes de entrenar.
+En la Actividad 1.1 se desarrolló un modelo para clasificar las especies de flores Iris (setosa, versicolor o virginica) a partir de cuatro medidas en centímetros, utilizando Random Forest y MLflow para registrar los experimentos. Sin embargo, el proceso se ejecutaba manualmente, celda por celda desde un notebook, y no contaba con validaciones previas para comprobar la calidad de los datos antes del entrenamiento.
 
-Este repositorio convierte ese experimento en un **pipeline único**: una secuencia de etapas que va desde la
-extracción de los datos hasta la validación del modelo y que se ejecuta con un solo comando. Además incorpora
-tres controles de calidad:
+En este repositorio se transforma ese ejercicio en un **pipeline único**, que integra todas las etapas del proceso, desde la extracción de los datos hasta la validación del modelo, y permite ejecutarlas mediante un solo comando. Adicionalmente, se incorporan tres controles de calidad:
 
-- **Validación de datos de entrada** escrita solo con la librería estándar de Python, que verifica tipos,
-  nulos y rangos lógicos antes de entrenar, además de reglas entre archivos que detectan especies faltantes
-  y fuga de datos entre entrenamiento y prueba.
-- **Contrato de datos** en JSON que define qué debe recibir el modelo en la futura inferencia, con un ejemplo
-  de entrada válida y uno de entrada inválida.
-- **Umbrales de calidad del modelo**: si el modelo no alcanza los mínimos definidos, el pipeline termina con error.
+- **Validación de los datos de entrada**, desarrollada únicamente con la librería estándar de Python, que permite verificar los tipos de datos, valores nulos y rangos lógicos antes del entrenamiento. También incluye reglas para identificar especies faltantes y posibles fugas de información entre los conjuntos de entrenamiento y prueba.
+- **Contrato de datos** en formato JSON, que establece las características que deben cumplir los datos que recibirá el modelo en una futura inferencia. Incluye un ejemplo de entrada válida y otro de entrada inválida.
+- **Umbrales de calidad del modelo**, que establecen unos valores mínimos de desempeño. Si el modelo no cumple con estos criterios, la ejecución del pipeline finaliza con un error.
 
 ## 2. Inicio rápido
 
 Requisitos: Python 3.12 o 3.13 y Git. En Windows, desde la terminal de VS Code o Antigravity (PowerShell):
 
 ```bash
-git clone https://github.com/<usuario>/<repositorio>.git
-cd <repositorio>
+git clone https://github.com/laurarincon440/Repositorio_Entrega2_LauraRincon.git
+cd Repositorio_Entrega2_LauraRincon
 python -m venv .venv                       # 1. Crea el entorno (una vez)
 .venv\Scripts\activate                     # 2. Lo activa (cada vez que se abre la terminal)
 python -m pip install -r requirements.txt  # 3. Instala las librerías (una vez)
@@ -111,17 +101,17 @@ Carpetas que crea el pipeline y que no se suben a GitHub (ver `.gitignore`), por
 
 ### 4.1 Datos
 
-- **Fuente:** dataset Iris (Fisher, 1936), incluido en scikit-learn (`sklearn.datasets.load_iris`). Es
+- **Fuente:** Dataset Iris (Fisher, 1936), incluido en scikit-learn (`sklearn.datasets.load_iris`). Es
   público, no contiene datos personales y no requiere consentimiento ni anonimización.
-- **Naturaleza:** datos estructurados, 150 registros, 4 variables numéricas continuas en centímetros y una
+- **Naturaleza:** Datos estructurados, 150 registros, 4 variables numéricas continuas en centímetros y una
   variable objetivo categórica con 3 clases balanceadas (50 flores por especie).
 - **Variables:** `sepal_length`, `sepal_width`, `petal_length`, `petal_width` (características) y
   `species` (0 = setosa, 1 = versicolor, 2 = virginica). Los nombres originales de scikit-learn se
   renombran para que no tengan espacios ni unidades y coincidan con los de la API de la Semana 3.
 - **Partición:** 80/20 estratificada por especie con `random_state=42`: 120 flores de entrenamiento (40 de
   cada especie) y 30 de prueba (10 de cada especie). En la Actividad 1.1 la partición no era estratificada y
-  la prueba quedó con 10, 9 y 11 flores; estratificar garantiza que las tres especies tengan el mismo peso en
-  la evaluación, como se propone en la Sesión 4. Por eso las 30 flores de prueba no son las mismas de la
+  la prueba quedó con 10, 9 y 11 flores. Estratificar garantiza que las tres especies tengan el mismo peso en
+  la evaluación, como se propuso en clase. Por eso las 30 flores de prueba no son las mismas de la
   Actividad 1.1 y los resultados cambian (sección 7).
 
 ### 4.2 Etapas del pipeline
@@ -160,9 +150,9 @@ modificar el código.
 - **Umbrales mínimos** (`config/params.json`): accuracy ≥ 0.90, F1 macro ≥ 0.90 y accuracy media de
   validación cruzada ≥ 0.90. Además, el modelo seleccionado no puede ser inferior a la baseline, el ejemplo
   válido del contrato debe recibir una predicción y el ejemplo inválido debe ser rechazado.
-- El umbral de 0.90 es más exigente que el 0.80 usado en la demostración de la Sesión 4. La razón se ve en
-  el juego de la sección 7.3: con 40 % de etiquetas erradas el modelo todavía alcanza 0.867, que pasaría
-  un umbral de 0.80 pero no uno de 0.90.
+- Incluso con el 40% de las etiquetas incorrectas, el modelo seleccionado todavía alcanza un accuracy de 0.867,
+  que habría superado el umbral de 0.80 utilizado en la demostración de clase. Por esa razón en este proyecto se
+  establece un mínimo de 0.90, buscando que el control de calidad sea más exigente (sección 7.3).
 
 ### 4.5 Reproducibilidad y trazabilidad
 
@@ -179,7 +169,8 @@ El hash SHA-256 funciona como huella digital del archivo: si `train.csv` se modi
 `train.py` lo detecta y se niega a entrenar.
 
 Versiones fijadas en `requirements.txt`: scikit-learn 1.9.1, MLflow 3.18.0 (backend SQLite), pandas 3.0.5,
-joblib 1.6.0 y pytest 9.1.1, probadas con Python 3.12 y 3.13.
+joblib 1.6.0 y pytest 9.1.1, probadas con Python 3.12 y 3.13. También incluye `ipykernel`, necesario para
+ejecutar el notebook con el entorno virtual.
 
 ## 5. Validación de datos de entrada
 
@@ -203,9 +194,7 @@ Reglas de conjunto, que comparan los archivos entre sí y que una fila aislada n
 | clases_completas | `train.csv` y `test.csv` contienen las tres especies | la extracción no trajo flores virginica |
 | sin_solapamiento_train_test | Ninguna flor de prueba está también en entrenamiento (fuga de datos) | las 30 flores de prueba copiadas en `train.csv` |
 
-La segunda regla responde a la lección principal de la Sesión 4: un pipeline solo detecta lo que alguien
-le enseñó a revisar. Sin ella, copiar la prueba en el entrenamiento produce un accuracy perfecto y todas las
-pruebas aprobadas. La regla tolera únicamente la flor que ya viene repetida en el dataset original.
+La segunda regla muestra que un pipeline solo detecta lo que alguien le enseñó a revisar. Sin ella, copiar la prueba en el entrenamiento produce un accuracy perfecto y todas las pruebas aprobadas. La regla tolera únicamente la flor que ya viene repetida en el dataset original.
 
 Rangos lógicos definidos en el contrato. Corresponden al rango observado en las 150 flores, ampliado al
 múltiplo de 0,5 cm más cercano y sin bajar de 0,1 cm, porque una medida física debe ser positiva:
@@ -219,7 +208,7 @@ múltiplo de 0,5 cm más cercano y sin bajar de 0,1 cm, porque una medida físic
 
 Además, a nivel de archivo se verifica que tenga registros y se reportan los registros duplicados como
 advertencia. Iris tiene una flor repetida (filas 103 y 144 de `data/raw/iris.csv`, contando el encabezado
-como fila 1); es un dato real, por eso no bloquea el pipeline, pero queda documentada en el log.
+como fila 1). Es un dato real, por eso no bloquea el pipeline, pero queda documentada en el log.
 
 Ejemplo del log cuando un archivo tiene errores:
 
@@ -265,11 +254,9 @@ Entrada inválida, con un incumplimiento de cada tipo:
 | petal_length | rango | -1.4 cm está por debajo del mínimo de 1.0 cm |
 | species | columnas | Es la variable objetivo: enviarla en la inferencia sería fuga de datos |
 
-`src/predict.py` valida cada registro contra el contrato antes de pasarlo al modelo y devuelve los errores
-en lugar de una predicción cuando el registro no cumple. Así el modelo solo recibe datos con las mismas
-columnas, tipos y rangos con los que fue entrenado, lo que evita el sesgo entre entrenamiento y servicio
-(*training-serving skew*). La etapa de validación comprueba en cada ejecución que el ejemplo válido pase y
-que el inválido produzca exactamente los cuatro errores anunciados.
+El archivo `src/predict.py` valida cada registro de acuerdo con el contrato de datos antes de enviarlo al modelo. Si la información no cumple con las condiciones establecidas, devuelve los errores identificados en lugar de generar una predicción. De esta manera, se garantiza que el modelo reciba datos con las mismas columnas, tipos y rangos utilizados durante su entrenamiento, evitando diferencias entre los datos del entrenamiento y los que recibe al momento de realizar predicciones (*training-serving skew*).
+
+Por su parte, la etapa de validación comprueba en cada ejecución que el ejemplo válido sea aceptado y que el inválido genere exactamente los cuatro errores definidos.
 
 ## 7. Resultados
 
@@ -283,12 +270,9 @@ de prueba).
 | Pipeline_Baseline | 1.000 | 0.950 ± 0.017 | 0.900 | 0.900 | 3 de 30 |
 | Pipeline_Run_2_n120_depth4 | 1.000 | 0.950 ± 0.017 | 0.967 | 0.967 | 1 de 30 |
 
-Ambos modelos tienen la misma validación cruzada sobre el entrenamiento. En prueba, el modelo seleccionado
-falla en 1 flor y la baseline en 3. La diferencia equivale a 2 flores, por lo que es modesta, pero
-confirma que limitar la profundidad a 4 no reduce el desempeño. A diferencia de la Actividad 1.1, con esta
-partición el modelo seleccionado también acierta todo el entrenamiento (1.000), así que el argumento de
-"no memorizar" ya no lo distingue de la baseline; la selección se sostiene en el desempeño en prueba y en
-la simplicidad.
+Los dos modelos obtienen el mismo resultado en la validación cruzada (0.950). Sin embargo, al evaluarlos con los datos de prueba, el modelo seleccionado se equivoca en 1 de las 30 flores (0.967), mientras que la baseline falla en 3 (0.900). Aunque la diferencia es pequeña, equivale a dos flores y permite comprobar que limitar la profundidad del modelo a 4 no reduce su rendimiento.
+
+Con la nueva partición estratificada, el modelo seleccionado también clasifica correctamente todos los datos de entrenamiento, a diferencia de la Actividad 1.1, donde se eligió precisamente porque no memorizaba esos datos. Por esta razón, su elección se justifica ahora por los resultados en prueba, por su menor brecha entre entrenamiento y prueba (0.033 frente a 0.100 de la baseline) y por su menor complejidad.
 
 ### 7.2 Controles de calidad
 
@@ -304,7 +288,7 @@ Tabla 2. Controles de calidad del pipeline.
 | Ejemplo inválido del contrato | Rechazado con 4 errores |
 | Pruebas automatizadas | 38 aprobadas |
 
-Al ejecutar el pipeline dos veces desde cero se obtienen las mismas métricas; solo cambian los Run ID y el
+Al ejecutar el pipeline dos veces desde cero se obtienen las mismas métricas. Solo cambian los Run ID y el
 tiempo de entrenamiento.
 
 ### 7.3 Juego "¡Rompe el pipeline!" de la Sesión 4
@@ -324,9 +308,11 @@ Tabla 3. Etapa que detiene cada sabotaje en la clase y en este repositorio.
 | 6. 40 % de etiquetas erradas | Pruebas | Validación del modelo | accuracy 0.867, F1 y CV bajo el umbral de 0.90 |
 | 7. Prueba copiada en entrenamiento | Nadie | Validación | `sin_solapamiento_train_test`: 30 de 30 flores repetidas |
 
-Los sabotajes 5 y 7 se detienen ahora antes de entrenar, gracias a las reglas de conjunto. El 6 no se puede
-detectar mirando los datos, porque las etiquetas erradas siguen siendo valores válidos; lo detiene la
-validación del modelo. Para volver a los datos correctos basta con ejecutar `python run_pipeline.py`.
+Los sabotajes del 1 al 4 se detectan durante la validación, igual que en el ejercicio de clase. Además, los sabotajes 5 y 7 también se identifican en esta etapa gracias a las reglas que revisan el conjunto de datos, por lo que no llegan al entrenamiento.
+
+El sabotaje 6 requiere una revisión diferente, ya que no es posible identificarlo directamente con los datos. Esto se debe a que una etiqueta incorrecta sigue teniendo un valor válido, como 0, 1 o 2. Por esta razón, se detecta más adelante, durante la evaluación del modelo (`evaluate`).
+
+Para volver a los datos correctos basta con ejecutar `python run_pipeline.py`.
 
 ## 8. Reproducción paso a paso desde cero
 
@@ -364,23 +350,14 @@ raíz del repositorio, al lado de `run_pipeline.py`, porque toma esa carpeta com
 
 ## 10. Limitaciones
 
-- Iris es un dataset pequeño y fácil de separar. Con 30 flores de prueba cada error vale 3.3 puntos
-  porcentuales, y el resultado depende de qué flores quedan en ese conjunto: en la Actividad 1.1, con 10
-  semillas distintas, la accuracy varió entre 0.83 y 1.0. Los umbrales de 0.90 son un control mínimo, no una
-  garantía de desempeño.
-- Un pipeline solo detecta lo que se le enseñó a revisar. Por ejemplo, un porcentaje de etiquetas erradas
-  menor al 40 % podría no bajar la accuracy del umbral y pasar todos los controles.
-- Los rangos lógicos se derivan del propio dataset. Con datos reales deberían definirse con expertos del
-  dominio y revisarse cuando cambie la población de origen.
-- La validación no detecta cambios de distribución (*data drift*) entre los datos de entrenamiento y los de
-  producción, que sería el siguiente paso de control de calidad.
+- Iris es un conjunto de datos pequeño y fácil de separar. Al tener solo 30 flores en el conjunto de prueba, cada error representa aproximadamente 3.3 puntos porcentuales, por lo que los resultados pueden variar dependiendo de las flores seleccionadas. De hecho, en la Actividad 1.1, al realizar pruebas con 10 semillas diferentes, la accuracy estuvo entre 0.83 y 1.0. Por esta razón, el umbral de 0.90 funciona como un control mínimo de calidad, pero no garantiza un buen desempeño en todos los casos.
+- El pipeline solo permite identificar los problemas que se han definido previamente dentro de sus validaciones. Por ejemplo, podría existir un porcentaje de etiquetas incorrectas inferior al 40 % sin que la accuracy caiga por debajo del umbral establecido, por lo que el proceso podría superar todos los controles.
+- Los rangos lógicos se establecieron tomando como referencia el propio conjunto de datos. Sin embargo, al trabajar con información real, estos criterios deberían definirse con apoyo de expertos en el dominio y revisarse cuando cambien las características de la población de origen.
+- La validación actual no permite identificar cambios en la distribución de los datos (*data drift*) entre el entrenamiento y la producción. Por lo tanto, este sería un siguiente paso para fortalecer los controles de calidad del modelo.
 
 ## 11. Uso de inteligencia artificial
 
-Conforme a la ruta de aprendizaje, se declara el uso de [herramienta y versión] como apoyo en [describir:
-por ejemplo, estructuración del código, revisión de errores, sugerencias de redacción del README]. El
-diseño del experimento, las decisiones metodológicas, la verificación de los resultados y la redacción
-final son responsabilidad de la autora.
+Conforme a la ruta de aprendizaje, se declara el uso de Claude (Anthropic) como herramienta de apoyo para estructurar el código del pipeline y revisar errores durante la ejecución.
 
 ## 12. Referencias
 
