@@ -1,0 +1,112 @@
+{
+  "nombre": "contrato_inferencia_iris",
+  "version": "1.0.0",
+  "fecha": "2026-11-18",
+  "responsable": "Laura Tatiana Rincón López",
+  "descripcion": "Contrato oficial de datos para la inferencia del clasificador de especies Iris. Define qué debe recibir el modelo, en qué formato y dentro de qué límites, y qué devuelve. Lo usan la etapa de validación del pipeline (src/validate_data.py), el script de inferencia (src/predict.py) y la futura API de la Semana 3.",
+  "modelo": {
+    "algoritmo": "RandomForestClassifier (scikit-learn)",
+    "configuracion": "Pipeline_Run_2_n120_depth4 (n_estimators=120, max_depth=4, random_state=42)",
+    "artefacto": "models/model.pkl",
+    "orden_caracteristicas": ["sepal_length", "sepal_width", "petal_length", "petal_width"]
+  },
+  "entrada": {
+    "formato": "Objeto JSON con exactamente las cuatro características. También se acepta una lista de objetos para inferencia por lotes.",
+    "campos_adicionales_permitidos": false,
+    "campos": {
+      "sepal_length": {
+        "tipo": "float",
+        "unidad": "cm",
+        "requerido": true,
+        "admite_nulos": false,
+        "minimo": 4.0,
+        "maximo": 8.0,
+        "descripcion": "Longitud del sépalo"
+      },
+      "sepal_width": {
+        "tipo": "float",
+        "unidad": "cm",
+        "requerido": true,
+        "admite_nulos": false,
+        "minimo": 2.0,
+        "maximo": 4.5,
+        "descripcion": "Ancho del sépalo"
+      },
+      "petal_length": {
+        "tipo": "float",
+        "unidad": "cm",
+        "requerido": true,
+        "admite_nulos": false,
+        "minimo": 1.0,
+        "maximo": 7.0,
+        "descripcion": "Longitud del pétalo"
+      },
+      "petal_width": {
+        "tipo": "float",
+        "unidad": "cm",
+        "requerido": true,
+        "admite_nulos": false,
+        "minimo": 0.1,
+        "maximo": 2.5,
+        "descripcion": "Ancho del pétalo"
+      }
+    },
+    "reglas_entre_campos": [
+      {
+        "id": "petalo_menor_que_sepalo",
+        "campo_menor": "petal_length",
+        "campo_mayor": "sepal_length",
+        "descripcion": "En las 150 flores del dataset la longitud del pétalo es menor que la del sépalo. Un registro que no cumpla esta relación probablemente tiene las columnas intercambiadas."
+      }
+    ],
+    "criterio_rangos": "Rango observado en las 150 flores del dataset Iris, ampliado al múltiplo de 0,5 cm más cercano y sin bajar de 0,1 cm, porque una medida física debe ser positiva. Fuera de este rango el modelo extrapolaría sobre valores que nunca vio durante el entrenamiento."
+  },
+  "reglas_de_conjunto": [
+    {
+      "id": "clases_completas",
+      "descripcion": "Los archivos de entrenamiento y prueba deben contener las tres especies. Si falta una, el modelo no puede aprenderla o no se puede evaluar."
+    },
+    {
+      "id": "sin_solapamiento_train_test",
+      "descripcion": "Ninguna flor de prueba puede estar también en entrenamiento. Si lo está, el modelo no predice sino que recuerda (fuga de datos). Solo se tolera la flor que ya viene duplicada en el dataset original."
+    }
+  ],
+  "variable_objetivo": {
+    "nombre": "species",
+    "tipo": "int",
+    "valores_permitidos": [0, 1, 2],
+    "etiquetas": {"0": "setosa", "1": "versicolor", "2": "virginica"},
+    "uso": "Solo existe en los archivos de entrenamiento y prueba. Nunca debe enviarse en una solicitud de inferencia, ya que el modelo la debe predecir y recibirla sería una fuga de datos."
+  },
+  "salida": {
+    "formato": "Objeto JSON por cada registro recibido",
+    "campos": {
+      "prediction": {"tipo": "string", "valores_posibles": ["setosa", "versicolor", "virginica"]},
+      "class_id": {"tipo": "int", "valores_posibles": [0, 1, 2]}
+    }
+  },
+  "manejo_de_errores": "Si un registro incumple cualquier regla, no se predice: se devuelve la lista de errores con el campo, la regla incumplida y el valor recibido.",
+  "ejemplo_entrada_valida": {
+    "sepal_length": 6.0,
+    "sepal_width": 2.9,
+    "petal_length": 4.5,
+    "petal_width": 1.4
+  },
+  "ejemplo_salida_valida": {
+    "prediction": "versicolor",
+    "class_id": 1
+  },
+  "ejemplo_entrada_invalida": {
+    "sepal_length": "5.1",
+    "sepal_width": null,
+    "petal_length": -1.4,
+    "petal_width": 0.2,
+    "species": 0
+  },
+  "errores_esperados_entrada_invalida": [
+    {"campo": "sepal_length", "regla": "tipo", "motivo": "Llega como texto (\"5.1\") y el contrato exige un número."},
+    {"campo": "sepal_width", "regla": "nulo", "motivo": "El valor es null y el campo no admite nulos."},
+    {"campo": "petal_length", "regla": "rango", "motivo": "-1.4 cm está por debajo del mínimo de 1.0 cm. Una longitud no puede ser negativa."},
+    {"campo": "species", "regla": "columnas", "motivo": "Campo no permitido: es la variable objetivo y enviarla en la inferencia sería fuga de datos."}
+  ]
+}

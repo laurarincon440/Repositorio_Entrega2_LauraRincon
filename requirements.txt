@@ -1,0 +1,7 @@
+# Versiones fijas para reproducir exactamente el entorno del experimento (Python 3.12)
+mlflow==3.18.0
+scikit-learn==1.9.1
+pandas==3.0.5
+joblib==1.6.0
+pytest==9.1.1
+ipykernel
