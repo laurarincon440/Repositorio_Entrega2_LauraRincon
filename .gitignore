@@ -1,0 +1,15 @@
+# Resultados que el pipeline regenera con: python run_pipeline.py --reiniciar
+data/
+models/
+reports/
+logs/
+mlruns/
+mlflow.db
+
+# Entorno y cachés de Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
